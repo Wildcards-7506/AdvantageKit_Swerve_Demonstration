@@ -18,6 +18,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -29,6 +30,7 @@ import frc.robot.subsystems.drive.GyroIONavX;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSpark;
+import frc.robot.subsystems.intake.Intake;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -40,6 +42,7 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 public class RobotContainer {
   // Subsystems
   public final Drive drive;
+  public final Intake intake;
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
@@ -84,6 +87,8 @@ public class RobotContainer {
         break;
     }
 
+    intake = new Intake();
+
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
 
@@ -122,22 +127,9 @@ public class RobotContainer {
             () -> -controller.getLeftX(),
             () -> -controller.getRightX()));
 
-    // Lock to 0° when A button is held
-    controller
-        .a()
-        .whileTrue(
-            DriveCommands.joystickDriveAtAngle(
-                drive,
-                () -> -controller.getLeftY(),
-                () -> -controller.getLeftX(),
-                () -> new Rotation2d()));
-
-    // Switch to X pattern when X button is pressed
-    controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
-
     // Reset gyro to 0° when B button is pressed
     controller
-        .b()
+        .start()
         .onTrue(
             Commands.runOnce(
                     () ->
@@ -145,6 +137,38 @@ public class RobotContainer {
                             new Pose2d(drive.getPose().getTranslation(), new Rotation2d())),
                     drive)
                 .ignoringDisable(true));
+
+    // Intake Commands
+    intake.setDefaultCommand(
+        Commands.runOnce(
+            () -> {
+              intake.setIntakePosition(230);
+              intake.setIntakeVoltage(0);
+              SmartDashboard.putString("Intake State", "IDLE");
+            },
+            intake));
+
+    controller
+        .rightBumper()
+        .whileTrue(
+            Commands.run(
+                () -> {
+                  intake.setIntakePosition(0);
+                  intake.setIntakeVoltage(12);
+                  SmartDashboard.putString("Intake State", "INTAKING");
+                },
+                intake));
+
+    controller
+        .rightTrigger()
+        .onTrue(
+            Commands.run(
+                    () -> {
+                      intake.setIntakeVoltage(-12);
+                      SmartDashboard.putString("Intake State", "REJECTING");
+                    },
+                    intake)
+                .withTimeout(0.5));
   }
 
   /**
