@@ -5,6 +5,8 @@
 package frc.robot.subsystems.intake;
 
 import com.revrobotics.spark.SparkBase.ControlType;
+import com.revrobotics.spark.SparkBase.PersistMode;
+import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
@@ -39,6 +41,9 @@ public class Intake extends SubsystemBase {
         .reverseSoftLimit(0.0);
     c_rotator.encoder.positionConversionFactor(360.0 / 5.0);
     c_rotator.closedLoop.pid(0.005, 0.0, 0.0);
+
+    m_intake.configure(c_intake, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    m_rotator.configure(c_rotator, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
 
   @Override

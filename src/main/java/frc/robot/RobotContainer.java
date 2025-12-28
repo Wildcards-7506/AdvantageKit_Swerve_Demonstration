@@ -31,6 +31,7 @@ import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSpark;
 import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.shooter.Shooter;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -43,6 +44,7 @@ public class RobotContainer {
   // Subsystems
   public final Drive drive;
   public final Intake intake;
+  public final Shooter shooter;
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
@@ -88,6 +90,7 @@ public class RobotContainer {
     }
 
     intake = new Intake();
+    shooter = new Shooter();
 
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
@@ -169,6 +172,25 @@ public class RobotContainer {
                     },
                     intake)
                 .withTimeout(0.5));
+
+    // Shooter
+    shooter.setDefaultCommand(
+        Commands.runOnce(
+            () -> {
+              shooter.setShooterVelocity(4);
+              SmartDashboard.putString("Shooter State", "IDLE");
+            },
+            shooter));
+
+    controller
+        .leftBumper()
+        .whileTrue(
+            Commands.run(
+                () -> {
+                  shooter.setShooterVelocity(60);
+                  SmartDashboard.putString("Shooter State", "SHOOTING");
+                },
+                shooter));
   }
 
   /**
