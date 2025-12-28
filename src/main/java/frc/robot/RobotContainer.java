@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
+import frc.robot.subsystems.climber.Climber;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIONavX;
@@ -45,6 +46,7 @@ public class RobotContainer {
   public final Drive drive;
   public final Intake intake;
   public final Shooter shooter;
+  public final Climber climber;
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
@@ -91,6 +93,7 @@ public class RobotContainer {
 
     intake = new Intake();
     shooter = new Shooter();
+    climber = new Climber();
 
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
@@ -191,6 +194,35 @@ public class RobotContainer {
                   SmartDashboard.putString("Shooter State", "SHOOTING");
                 },
                 shooter));
+
+    // Climber
+    climber.setDefaultCommand(
+        Commands.runOnce(
+            () -> {
+              climber.setClimberVoltage(0);
+              SmartDashboard.putString("Climb State", "IDLE");
+            },
+            climber));
+
+    controller
+        .povDown()
+        .whileTrue(
+            Commands.run(
+                () -> {
+                  climber.setClimberVoltage(12);
+                  SmartDashboard.putString("Climb State", "RETRACTING");
+                },
+                climber));
+
+    controller
+        .povUp()
+        .whileTrue(
+            Commands.run(
+                () -> {
+                  climber.setClimberVoltage(-12);
+                  SmartDashboard.putString("Climb State", "EXTENDING");
+                },
+                climber));
   }
 
   /**
